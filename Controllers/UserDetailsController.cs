@@ -19,14 +19,13 @@ namespace API.MangaShop.Controllers
         // GET: api/UserDetails
         public IQueryable<UserDetails> GetUserDetails()
         {
-            return db.UserDetails;
+            return db.UserDetails.Where(ud => ud.IsActive);
         }
 
         // GET: api/UserDetails/5
-        [ResponseType(typeof(UserDetails))]
         public IHttpActionResult GetUserDetails(int id)
         {
-            UserDetails userDetails = db.UserDetails.Find(id);
+            UserDetails userDetails = db.UserDetails.FirstOrDefault(ud => ud.UserDetailsId == id && ud.IsActive);
             if (userDetails == null)
             {
                 return NotFound();
@@ -40,30 +39,27 @@ namespace API.MangaShop.Controllers
         [ResponseType(typeof(List<UserDetails>))]
         public IHttpActionResult GetUserDetailsByUserId(int userId)
         {
-            var userDetails = db.UserDetails.Where(ud => ud.UserId == userId).ToList();
+            var userDetails = db.UserDetails.Where(ud => ud.UserId == userId && ud.IsActive).ToList();
             if (userDetails == null || !userDetails.Any())
+            {
+                return Ok(new List<UserDetails>()); // Restituisci un array vuoto anziché un errore 404
+            }
+            return Ok(userDetails);
+        }
+
+
+        // PUT: api/UserDetails/5
+        [ResponseType(typeof(void))]
+        public IHttpActionResult PutUserDetails(int id, UserDetailsIsActiveDto userDetailsDto)
+        {
+            var dbUserDetails = db.UserDetails.Find(id);
+            if (dbUserDetails == null)
             {
                 return NotFound();
             }
 
-            return Ok(userDetails);
-        }
-
-        // PUT: api/UserDetails/5
-        [ResponseType(typeof(void))]
-        public IHttpActionResult PutUserDetails(int id, UserDetails userDetails)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != userDetails.UserDetailsId)
-            {
-                return BadRequest();
-            }
-
-            db.Entry(userDetails).State = EntityState.Modified;
+            dbUserDetails.IsActive = userDetailsDto.IsActive;
+            db.Entry(dbUserDetails).State = EntityState.Modified;
 
             try
             {
@@ -83,6 +79,8 @@ namespace API.MangaShop.Controllers
 
             return StatusCode(HttpStatusCode.NoContent);
         }
+
+
 
         // POST: api/UserDetails
         [ResponseType(typeof(UserDetails))]

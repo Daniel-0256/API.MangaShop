@@ -115,20 +115,30 @@ namespace API.MangaShop.Controllers
 
 
         // DELETE: api/Orders/5
-        [ResponseType(typeof(Orders))]
         public IHttpActionResult DeleteOrders(int id)
         {
-            Orders orders = db.Orders.Find(id);
+            Orders orders = db.Orders.Include(o => o.OrderDetails).FirstOrDefault(o => o.OrderId == id);
             if (orders == null)
             {
                 return NotFound();
             }
 
+            db.OrderDetails.RemoveRange(orders.OrderDetails);
+
             db.Orders.Remove(orders);
-            db.SaveChanges();
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                return InternalServerError(ex);
+            }
 
             return Ok(orders);
         }
+
 
         protected override void Dispose(bool disposing)
         {

@@ -40,6 +40,8 @@
         [StringLength(50)]
         public string CardCVV { get; set; }
 
+        public bool IsActive { get; set; }
+
         public virtual Users Users { get; set; }
     }
 }
